@@ -13,10 +13,17 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  ACR_NAME: demogaurav.azurecr.io
+  ACR_REPO_NAME: demogaurav.azurecr.io/docker-java-app
+  ARTIFACT_NAME: docker-java-app
+  RESOURCE_GROUP: Gaurav-RG
+  AKS_CLUSTER_NAME: Gaurav-AKS-cluster
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  deploy:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -29,6 +36,12 @@ jobs:
       - name: Run a one-line script
         run: echo Hello, world!
 
+      # Login to Azure CLI
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
