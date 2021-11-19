@@ -46,4 +46,5 @@ jobs:
           docker login ${{ env.ACR_NAME }} --username ${{ secrets.ACR_PUSH_USER }} --password ${{ secrets.ACR_PUSH_TOKEN }}
           kubectl version --client
           kubectl apply -f ./kubernetes/blue-deploy.yaml
+          kubectl apply -f ./kubernetes/green-deploy.yaml
           kubectl apply -f ./kubernetes/service.yaml
