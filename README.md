@@ -148,7 +148,7 @@ $ sed 's/1\.10/1.11/' kubernetes/blue-deploy.yaml | kubectl apply -f -
 
 We will update the Service to select pods from the Green Deployment. This will cause new requests to be set to the new pods.
 
-You can update the file 'service.yaml' manually by updating 'version:' from *1.10* to *1.11*,
+You can update the file `service.yaml` manually by updating `version:` from *1.10* to *1.11*,
 
 or use a tool like `sed`:
 
