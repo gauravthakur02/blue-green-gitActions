@@ -1,13 +1,13 @@
 # Kubernetes Blue/Green Deplyment Tutorial
 
-This is a simple tutorial on how to do [Blue/Green Deployment](https://martinfowler.com/bliki/BlueGreenDeployment.html) on Kubernetes.
+This is a simple tutorial on how to do [Blue/Green Deployment] on Kubernetes.
 
 ## Prerequisites
 
-Any Kubernetes cluster 1.3+ should work. Creating a cluster on [GKE](https://cloud.google.com/container-engine/) is pretty easy.
+Any Kubernetes cluster 1.3+ should work. Create an [AKS Cluster](https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough) using Az CLI.
 
 ```
-gcloud container clusters create bluegreen
+az aks create --resource-group myResourceGroup --name myAKSCluster --node-count 1 --enable-addons monitoring --generate-ssh-keys
 ```
 
 ## Setup
@@ -16,20 +16,24 @@ The blue Deployment is the version that is deployed live in production. It can b
 
 ### Create the Blue Deployment
 
-The Deployment will start up a few nginx containers as the application. The Deployment has a `name` and `version` label. This is significant as the Service will use these labels to switch to the green version later.
+The Deployment will start up a few nginx containers as the application. The Deployment has a `app` and `version` label. This is significant as the Service will use these labels to switch to the green version later.
 
 [embedmd]:# (kubernetes/blue-deploy.yaml yaml)
 ```yaml
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-1.10
 spec:
   replicas: 3
+  selector:
+      matchLabels:
+        app: nginx
+        version: "1.10"
   template:
     metadata:
       labels:
-        name: nginx
+        app: nginx
         version: "1.10"
     spec:
       containers: 
@@ -38,6 +42,13 @@ spec:
           ports:
             - name: http
               containerPort: 80
+          resources:
+            requests:
+              cpu: 200m
+              memory: 200Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
 ```
 
 Create the Blue Deployment:
@@ -55,14 +66,14 @@ kind: Service
 metadata: 
   name: nginx
   labels: 
-    name: nginx
+    app: nginx
 spec:
   ports:
     - name: http
       port: 80
       targetPort: 80
   selector: 
-    name: nginx
+    app: nginx
     version: "1.10"
   type: LoadBalancer
 ```
@@ -94,16 +105,20 @@ The Green Deployment is cerated by updating to the next version. An entirely new
 
 [embedmd]:# (kubernetes/green-deploy.yaml yaml)
 ```yaml
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-1.11
 spec:
   replicas: 3
+  selector:
+      matchLabels:
+        app: nginx
+        version: "1.11"
   template:
     metadata:
       labels:
-        name: nginx
+        app: nginx
         version: "1.11"
     spec:
       containers: 
@@ -112,6 +127,13 @@ spec:
           ports:
             - name: http
               containerPort: 80
+          resources:
+            requests:
+              cpu: 200m
+              memory: 200Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
 ```
 
 You can update the Blue Deployment's file directly or use a tool like `sed`:
@@ -126,7 +148,9 @@ $ sed 's/1\.10/1.11/' kubernetes/blue-deploy.yaml | kubectl apply -f -
 
 We will update the Service to select pods from the Green Deployment. This will cause new requests to be set to the new pods.
 
-You can update the file directly or use a tool like `sed`:
+You can update the file 'service.yaml' manually by updating 'version:' from *1.10* to *1.11*,
+
+or use a tool like `sed`:
 
 ```
 $ sed 's/1\.10/1.11/' kubernetes/service.yaml 
